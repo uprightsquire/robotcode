@@ -1,0 +1,243 @@
+\<!DOCTYPE html>
+<html>
+<head>
+<title>Robot Controller</title>
+
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<script type="text/javascript" src="/socket.io/socket.io.js"></script>
+<script type="text/javascript" src="http://cdn.robotwebtools.org/EventEmitter2/current/eventemitter2.min.js"></script>
+<script type="text/javascript" src="http://cdn.robotwebtools.org/roslibjs/current/roslib.min.js"></script>
+<script type="text/javascript" src="processing-1.4.1.min.js"></script>
+<script type="text/processing" data-processing-target="sketch">
+
+int value = 255; // Motor power slider
+int angle = 80; // Compass angle
+String milliV = ""; // Voltage (mV)
+String orient = ""; // Orientation (degrees)
+int compX = 100;
+int compY = 200;
+PFont font;
+int milliP = 50;
+
+int contX = 0;
+int contY = 0;
+
+int speedX = 0;
+int speedY = 0;
+
+boolean pressing = false;
+
+void setup() {
+    size(1000, 500);
+    smooth(4);
+    background(255);
+    stroke(255);
+    font = loadFont("Bold.vlw");
+textFont(font, 16);
+    }
+
+void draw(){
+    background(255);
+    stroke(200);
+    strokeWeight(2);
+    line(200,10,200,490);
+   
+   // fill(200,200);
+   // ellipse (55,255+2, 40,40);
+   // fill(200,0,0);
+  //  stroke(255,0,0);
+  //  ellipse (50,255, 40,40);
+    //fill(0);
+   // textAlign(CENTER);
+   // text("STOP", 50,5+(height/2));
+  //  textAlign(CENTER);
+   // text(milliV, 100,25);
+  //  text(orient, 100,50);
+    if(pressing==false){
+     contX=int(contX/2);
+ contY=int(contY/2);
+    }
+    
+    fill(255);
+    stroke(200);
+    rect(compX-75,50,150,50,10,10,10,10);
+    
+    fill(150);
+    stroke(150);
+    for(int i=0; i<10; i++){
+     rect(compX-70-2+i*15,55,9,40,5,5,5,5); 
+    }
+    stroke(0);
+    for(int i=0; i<int(milliP/10); i++){
+    if(i<6){
+    fill(0,200,0);
+    }
+     if(i<4){
+    fill(200,100,0);
+    }
+     if(i<2){
+    fill(200,0,0);
+    }
+     rect(compX-70-2+i*15,55,9,40,5,5,5,5); 
+    }
+    
+    
+    stroke(200);
+    line(460,10,460,490);
+    line(210,250,690,250);
+    noFill();
+    ellipse(460,250,200,200);
+    ellipse(460,250,400,400);
+    
+    
+    fill(100,50);
+    noStroke();
+    ellipse(contX+460+5,contY+250+5,105,105);
+    fill(200,0,0);
+    stroke(100,0,0);
+    ellipse(contX+460,contY+250,100,100);
+    
+    //Draw compass
+    fill(255);
+    stroke(200);
+    rect(compX-75,compY-75,150,150,10,10,10,10);
+    fill(0);
+   // text("Orientation",compX,compY-60);
+    fill(50);
+    stroke(0);
+    strokeWeight(2);
+    ellipse(compX,compY,100,100);
+    fill(255);
+    text("N",compX,compY-35);
+    text("W",compX-40,compY+5);
+    text("S",compX,compY+45);
+    text("E",compX+40,compY+5);
+    noStroke();
+    fill(0,200);
+    triangle(
+        compX+2+(5*cos(radians(angle))),
+        compY+2+(5*sin(radians(angle))),
+        compX+2-(40*sin(radians(angle))),
+        compY+2+(40*cos(radians(angle))),
+        compX+2-(5*cos(radians(angle))),
+        compY+2-(5*sin(radians(angle)))
+        );
+    triangle(
+        compX+2+(5*cos(radians(angle))),
+        compY+2+(5*sin(radians(angle))),
+        compX+2+(40*sin(radians(angle))),
+        compY+2-(40*cos(radians(angle))),
+        compX+2-(5*cos(radians(angle))),
+        compY+2-(5*sin(radians(angle)))
+        );
+    stroke(255,0,0);
+    strokeWeight(2);
+    fill(255,0,0);
+    triangle(
+        compX+(5*cos(radians(angle))),
+        compY+(5*sin(radians(angle))),
+        compX-(40*sin(radians(angle))),
+        compY+(40*cos(radians(angle))),
+        compX-(5*cos(radians(angle))),
+        compY-(5*sin(radians(angle)))
+        );
+    fill(255);
+    triangle(
+        compX+(5*cos(radians(angle))),
+        compY+(5*sin(radians(angle))),
+        compX+(40*sin(radians(angle))),
+        compY-(40*cos(radians(angle))),
+        compX-(5*cos(radians(angle))),
+        compY-(5*sin(radians(angle)))
+        );
+    fill(255);
+    stroke(0);
+    strokeWeight(1);
+    ellipse(compX,compY,5,5);
+   }
+
+void mouseDragged() {
+   pressing = true;
+    contX = mouseX-460;
+    contY = mouseY-250;
+    if(contX>200){contX=200;}
+    if(contX<-200){contX=-200;}
+     if(contY>200){contY=200;}
+    if(contY<-200){contY=-200;}
+    speedX = contX*(cos(PI/4))-contY*(sin(PI/4));
+    speedY = contX*(sin(PI/4))+contY*(cos(PI/4));
+
+    socket.emit('speed',  format(255+int(speedX)), format(255-int(speedY)));
+    }
+
+void mouseReleased() {
+   // if(mouseX>=40 && mouseX<60 && mouseY>=245 & mouseY<265){
+      socket.emit('speed', format(255), format(255));
+
+ pressing = false;
+     //   }
+    }
+
+
+// Parse and display incoming data
+void doData(String s){
+    if(s.substring(0,1)=="V"){
+        tempPc = floor(100*((parseInt(s.substring(1,s.length()))-4000)/1800));
+        milliV = s.substring(1,s.length()) + " mv, " + tempPc + "%";
+        }
+    if(s.substring(0,1)=="O"){
+        orient = "Orientation: " + s.substring(1,s.length()) + "°";
+        angle =  int(s.substring(1,s.length()));
+        }
+    }
+
+// Add leading zeros to motor speed values 
+String format(int value){
+    String tempString = str(value);
+    if(tempString.length() == 1){
+        tempString = "00"+tempString;
+        } 
+    if(tempString.length() == 2){
+        tempString = "0"+tempString;
+        } 
+    return tempString;
+    }
+  
+</script>
+
+<script>
+// ROS <-> Processing
+var processingInstance = Processing.getInstanceById('sketch');
+var socket = io.connect('/');
+var ros = new ROSLIB.Ros({
+    url : 'ws://localhost:9090'
+    });
+
+var cmdVel = new ROSLIB.Topic({
+    ros : ros,
+    name : 'chatter',
+    messageType : 'std_msgs/String'
+    });
+
+socket.on('data', function(indata) {
+    //var twist = new ROSLIB.Message	({
+    //    data:indata
+    //    });
+    doData(indata);
+    //cmdVel.publish(twist);
+    });
+
+
+//Forward to js doData() to processing function doData()
+var doData = function(x) {
+    var processingInstance = Processing.getInstanceById('sketch');
+    processingInstance.doData(x);
+    }
+
+</script>
+</head>
+<body>
+<div id="connection"></div>
+<canvas id="sketch"></canvas>
+</body>
+</html>
