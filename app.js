@@ -65,7 +65,7 @@ server.listen(port, function(){
 //Forward serial data to webpage (Incoming data)
 
 serialPort.on('data', function(data) {
-//    console.log(data);
+    console.log(data);
     io.sockets.emit('data', data);
     
     });

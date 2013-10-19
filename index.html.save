@@ -44,7 +44,7 @@ void draw(){
 
     if(pressing==false){
 //      if((oldSpeedL) != 255 || (oldSpeedR) != 255){
-//     slowDown();
+     slowDown();
 //}
 }
     background(255);
@@ -178,8 +178,8 @@ void mouseDragged() {
     speedY = contX*(sin(PI/4))+contY*(cos(PI/4));
 
     socket.emit('speed',  format(255+int(speedX)), format(255-int(speedY)));
-    //oldSpeedL = int(speedX);   
-    //oldSpeedR = int(speedY)-255;
+    oldSpeedL = int(speedX)+255;   
+    oldSpeedR = int(speedY)-255;
     }
 
 void slowDown(){
@@ -192,7 +192,7 @@ void slowDown(){
 
 void mouseReleased() {
    // if(mouseX>=40 && mouseX<60 && mouseY>=245 & mouseY<265){
-      socket.emit('speed', format(255), format(255));
+//      socket.emit('speed', format(255), format(255));
 
  pressing = false;
      //   }
@@ -202,10 +202,9 @@ void mouseReleased() {
 // Parse and display incoming data
 void doData(String s){
     if(s.substring(0,1)=="V"){
-//        milliP = floor(100*((parseInt(s.substring(1,s.length()))-4000)/1800));
-        milliV = s.substring(1,s.length());
-        milliP = int((int(milliV)-3000)*100/4200);
-	}
+        tempPc = floor(100*((parseInt(s.substring(1,s.length()))-4000)/1800));
+        milliV = s.substring(1,s.length()) + " mv, " + tempPc + "%";
+        }
     if(s.substring(0,1)=="O"){
         orient = "Orientation: " + s.substring(1,s.length()) + "°";
         angle =  int(s.substring(1,s.length()));
