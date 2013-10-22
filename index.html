@@ -2,7 +2,6 @@
 <html>
 <head>
 <title>Robot Controller</title>
-
 <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
 <script type="text/javascript" src="/socket.io/socket.io.js"></script>
 <script type="text/javascript" src="http://cdn.robotwebtools.org/EventEmitter2/current/eventemitter2.min.js"></script>
@@ -14,6 +13,9 @@ int value = 255; // Motor power slider
 int angle = 80; // Compass angle
 String milliV = ""; // Voltage (mV)
 String orient = ""; // Orientation (degrees)
+
+int avgBatt = 3000;
+int bSamp = 1;
 int compX = 100;
 int compY = 200;
 PFont font;
@@ -27,6 +29,10 @@ int speedY = 0;
 
 int oldSpeedL = 0;
 int oldSpeedR = 0;
+
+int[] acX = new int[100];
+int[] acY = new int[100];
+int[] acZ = new int[100];
 
 boolean pressing = false;
 
@@ -57,12 +63,7 @@ void draw(){
    // fill(200,0,0);
   //  stroke(255,0,0);
   //  ellipse (50,255, 40,40);
-    //fill(0);
-   // textAlign(CENTER);
-   // text("STOP", 50,5+(height/2));
-  //  textAlign(CENTER);
-   // text(milliV, 100,25);
-  //  text(orient, 100,50);
+    //  text(orient, 100,50);
     if(pressing==false){
      contX=int(contX/2);
  contY=int(contY/2);
@@ -70,7 +71,13 @@ void draw(){
     
     fill(255);
     stroke(200);
-    rect(compX-75,50,150,50,10,10,10,10);
+    rect(compX-75,50,150,50,10,10,0,10);
+        fill(255);
+    stroke(200);
+    rect(125,100,50,15,0,0,10,10);
+    noStroke();
+    rect(127,110,48,-15);
+    
     
     fill(150);
     stroke(150);
@@ -91,6 +98,13 @@ void draw(){
      rect(compX-70-2+i*15,55,9,40,5,5,5,5); 
     }
     
+
+    fill(0);
+   // textAlign(CENTER);
+   // text("STOP", 50,5+(height/2));
+  //  textAlign(CENTER);
+    textSize(10);
+    text(int(avgBatt)+"mV", 130,110);
     
     stroke(200);
     line(460,10,460,490);
@@ -164,6 +178,22 @@ void draw(){
     stroke(0);
     strokeWeight(1);
     ellipse(compX,compY,5,5);
+    
+    
+   strokeWeight(2);
+   stroke(255,0,0);
+   for(int i=0; i<99; i++){
+   line(50+i,400+acX[i],50+i+1,400+acX[i+1]);
+   } 
+     stroke(0,255,0);
+   for(int i=0; i<99; i++){
+   line(50+i,400+acY[i],50+i+1,400+acY[i+1]);
+   } 
+     stroke(0,0,255);
+   for(int i=0; i<99; i++){
+   line(50+i,400+acZ[i],50+i+1,400+acZ[i+1]);
+   } 
+   
    }
 
 void mouseDragged() {
@@ -198,18 +228,40 @@ void mouseReleased() {
      //   }
     }
 
+void addAcc(int tempAcc, int Dir[]){
+    for(int i=99;i>0; i--){
+    Dir[i]=Dir[i-1];
+    }
+    Dir[0]=tempAcc/10;
+}
+
+
 
 // Parse and display incoming data
 void doData(String s){
     if(s.substring(0,1)=="V"){
 //        milliP = floor(100*((parseInt(s.substring(1,s.length()))-4000)/1800));
         milliV = s.substring(1,s.length());
-        milliP = int((int(milliV)-3000)*100/4200);
-	}
+	avgBatt = (((bSamp-1)*avgBatt)+int(milliV))/bSamp;
+	bSamp = bSamp +1;
+	if(bSamp>10){bSamp=10;}
+        milliP = int((avgBatt-3000)*100/900);
+  	}
     if(s.substring(0,1)=="O"){
-        orient = "Orientation: " + s.substring(1,s.length()) + "°";
         angle =  int(s.substring(1,s.length()));
         }
+    
+    if(s.substring(0,2)=="AX"){
+        addAcc(int(s.substring(2,s.length())), acX);
+        }
+    
+     if(s.substring(0,2)=="AY"){
+        addAcc(int(s.substring(2,s.length())), acY);
+        }
+     if(s.substring(0,2)=="AZ"){
+        addAcc(int(s.substring(2,s.length())), acZ);
+        }
+    
     }
 
 // Add leading zeros to motor speed values 
